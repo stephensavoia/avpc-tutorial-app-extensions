@@ -1,0 +1,24 @@
+<div class="hello-world-section" id="hello-world-{{ block.id }}">
+  <div class="hello-world-container">
+     {{ block.settings.title }}
+     {{ 'avpc_product_quiz.hello_world' | t }}
+
+     {% render 'product-snippet' %}
+  </div>
+</div>
+
+
+{% schema %}
+{
+  "name": "Hello World",
+  "target": "section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Title",
+      "default": "Hello World!"
+    }
+  ]
+}
+{% endschema %}
