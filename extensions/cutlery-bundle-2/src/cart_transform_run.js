@@ -29,7 +29,7 @@ export function cartTransformRun(input) {
     return line.merchandise.__typename === "ProductVariant" && 
            line.merchandise.id === TARGET_VARIANT_ID;
   });
-  console.log("THIS RANGER");
+
   if (targetLines.length === 0) {
     return NO_CHANGES;
   }
@@ -38,11 +38,13 @@ export function cartTransformRun(input) {
   const operations = targetLines.map(targetLine => {
     // Create expanded cart items for each bundle variant
     // Each variant gets the same quantity as the target line
-    console.log(`Expanding line ${targetLine.id} with quantity ${targetLine.quantity}`);
+
     const expandedCartItems = BUNDLE_VARIANTS.map(variantId => ({
       merchandiseId: variantId,
       quantity: 1
     }));
+
+    console.log(JSON.stringify(expandedCartItems));
     
     return {
       lineExpand: {
