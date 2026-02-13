@@ -3,6 +3,7 @@
 /**
  * @typedef {import("../generated/api").CartTransformRunInput} CartTransformRunInput
  * @typedef {import("../generated/api").CartTransformRunResult} CartTransformRunResult
+ * @typedef {import("../generated/api").Operation} Operation
  */
 
 /**
@@ -17,45 +18,49 @@ const NO_CHANGES = {
  * @returns {CartTransformRunResult}
  */
 export function cartTransformRun(input) {
+  /** @type {Operation[]} */
+  const operations = input.cart.lines.reduce(
+    (acc, cartLine) => {
+      const expandOperation = optionallyBuildExpandOperation(cartLine);
+
+      if (expandOperation) {
+        return [...acc, { lineExpand: expandOperation }];
+      }
+
+      return acc;
+    },
+    /** @type {Operation[]} */ ([])
+  );
+
+  return operations.length > 0 ? { operations } : NO_CHANGES;
+}
+
+/**
+ * @param {CartTransformRunInput['cart']['lines'][number]} cartLine
+ */
+function optionallyBuildExpandOperation(cartLine) {
+  const { id, merchandise } = cartLine;
+
   const TARGET_VARIANT_ID = "gid://shopify/ProductVariant/47803843313899";
   const BUNDLE_VARIANTS = [
     "gid://shopify/ProductVariant/47330424848619",
     "gid://shopify/ProductVariant/47330342404331", 
     "gid://shopify/ProductVariant/47330342306027"
   ];
-  
-  // Find cart lines with the target variant ID
-  const targetLines = input.cart.lines.filter(line => {
-    return line.merchandise.__typename === "ProductVariant" && 
-           line.merchandise.id === TARGET_VARIANT_ID;
-  });
 
-  if (targetLines.length === 0) {
-    return NO_CHANGES;
-  }
-  
-  // Create operations to expand each target line into bundle components
-  const operations = targetLines.map(targetLine => {
-    // Create expanded cart items for each bundle variant
-    // Each variant gets the same quantity as the target line
-
-    const expandedCartItems = BUNDLE_VARIANTS.map(variantId => ({
-      merchandiseId: variantId,
-      quantity: 1
-    }));
-
-    console.log(JSON.stringify(expandedCartItems));
-    
+  if (
+    merchandise.__typename === "ProductVariant" &&
+    merchandise.id === TARGET_VARIANT_ID
+  ) {
     return {
-      lineExpand: {
-        cartLineId: targetLine.id,
-        expandedCartItems: expandedCartItems,
-        title: "Cutlery Bundle"
-      }
+      cartLineId: id,
+      title: "Cutlery Bundle",
+      expandedCartItems: BUNDLE_VARIANTS.map((variantId) => ({
+        merchandiseId: variantId,
+        quantity: 1,
+      })),
     };
-  });
-  
-  return {
-    operations
-  }; 
-};
+  }
+
+  return null;
+}
